@@ -1,0 +1,67 @@
+1 executions
+
+Declaration Statement by Simon Poortman 
+27-12-2021
+Ministerlaan 44
+8014 PK
+Zwolle
++31610325665
+Mitchell Kaman should be arrested he tries to take advantage of every day by violently stabbing threats and so on, so he has tried to stab me with an old ruined piece of iron now he abuses every day whether the whole life is about that piece of iron that I took from him. Jesse nijland goes into this
+Along with his family with dewi Roelofs and shemara van Houten my ex girlfriend of 8years back me what to do to call that I dead must want to rob me of life this is a moral case have the police need his help to solve this have already reported 3 x earlier. Several people participate here
+Uriel Wendt
+Lars van lente
+Rick vom Berg 
+Roel van de Berg
+Jesse Nijland
+Henk Nijland 
+Dirk ruiten berg
+Robert Visscher
+Ben Snoeks
+Constantijn Wendt
+Mark Vos
+Herdi Wolf
+Joop kaman 
+Michael Hamstra
+Millan Kubsing
+Slobodan Rocholic
+Jolanda van Houten
+
+I want them all to be prosecuted for violating my private life and depriving me of my peace. And hacking my data from the phone all day long, they have been doing this for 4 to 5 years, according to Millan Kubsing, with Jolanda van Houten with Henk nijland trying to put me in the care whether that has been for a few years, and benefit from a personal buget or something similar that they talk about that of course must be reimbursed. I am not served by this I am not missing anything! For example, they try to make me think that I hear voices which of course is nix of true, can take care of myself. These are scams that scam them and need immediate police assistance to clean up these criminals.
+Declaration explanation
+Simon Poortman
+
+<p>There are situations where you may need to kick off a pipeline in another repository, and monitor the status of that build before proceeding in your current build. Such as running tests in another service and then continuing with a deploy if that pipeline is successful.</p>
+<p>This can be accomplished by triggering the build via a run step and then polling the status of that pipeline and proceeding accordingly.</p>
+<p>Below are the two run steps to set this up. You will need to replace <code>(vcs)</code> with either <code>github</code> or <code>bitbucket</code> depending on your version control system. <code>(org)</code> with your Organization name and <code>(project)</code> with your repoistory name. In addition, you will need to <a href="https://circleci.com/docs/2.0/managing-api-tokens/#creating-a-personal-api-token" target="_blank" rel="noopener">generate a personal API token</a> and store that is a <a href="https://circleci.com/docs/2.0/env-vars/#setting-an-environment-variable-in-a-project" target="_blank" rel="noopener">enviroment variable</a> called <code>CIRCLE_TOKEN</code>.</p>
+<pre style="background-color: #f3f3f3;">- run:
+    command: |
+      PIPELINE_ID=$(curl --location --request POST 'https://circleci.com/api/v2/project/(vcs)/(org)/(project)/pipeline' \
+      --header 'Content-Type: application/json' \
+      --header "Circle-Token: ${CIRCLE_TOKEN}" \
+      --data-raw '{
+          "parameters": {
+              "node-v-1": "10.1.1"
+        }
+      }' | jq -r '.id')
+
+      echo "export PIPELINE=$PIPELINE_ID" &gt;&gt; $BASH_ENV
+- run: |
+    STATUS=$(curl "https://circleci.com/api/v2/pipeline/$PIPELINE/workflow?circle-token=$CIRCLE_TOKEN" | jq -r '.items[].status')
+
+    while [ "$STATUS" == "running" ]; do
+      echo still running
+      sleep 10
+      STATUS=$(curl -s "https://circleci.com/api/v2/pipeline/$PIPELINE/workflow?circle-token=$CIRCLE_TOKEN" | jq -r '.items[].status')
+    done
+
+    echo "finally done, checking final status: $STATUS"
+    if [[ "$STATUS" == "success" ]]; then
+      echo "Proceeding with build, as triggered pipeline was success"
+      exit 0
+    else
+      echo "Stopping build, triggered pipeline was not a success"
+      exit 1
+    fi</pre>
+<p>The first run step kicks off the pipeline to run in the other repository, optionally you can pass in pipeline paramters if needed or remove the <code>--data-raw</code> section. Beyond kicking off the pipeline, it also saves the pipeline ID from the generated pipeline so we can poll the status of it in the next step.</p>
+<p>The next run step will continually check the status of the pipeline. Once that status moves from <code>running</code> to something else -- we will take the appropriate actions. In this case, if <code>success</code> we proceed with the rest of the build. If it is anything else we fail the build with an <code>exit 1</code>.</p>
+<p>You can build in a delay before the status checks occur by adding a <code>sleep X</code> to the top of the second run step if you know that pipeline usually takes a specific amount of time to run. </p>
